@@ -1,0 +1,179 @@
+#include <FEHLCD.h>
+#include <FEHIO.h>
+#include <FEHUtility.h>
+#include <FEHMotor.h>
+#include <FEHRPS.h>
+#include <FEHServo.h>
+//Declarations for encoders & motors
+DigitalEncoder right_encoder(FEHIO::P0_0);
+DigitalEncoder left_encoder(FEHIO::P2_7);
+FEHMotor right_motor(FEHMotor::Motor1,9.0);
+FEHMotor left_motor(FEHMotor::Motor0,9.0);
+AnalogInputPin cds (FEHIO::P1_7);
+FEHServo robot_arm(FEHServo::Servo0);
+void move_forward(int percent, int counts) //using encoders
+{
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    //Set both motors to desired percent
+    right_motor.SetPercent(percent);
+    left_motor.SetPercent(percent);
+
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+   float t_now=TimeNow();
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2. < counts && TimeNow()-t_now<5.0);
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+}
+void turn(int leftPercent, int rightPercent, int counts) {
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    //Set both motors to desired percent
+    right_motor.SetPercent(rightPercent);
+    left_motor.SetPercent(leftPercent);
+
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2. < counts);
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+}
+void dance (int leftPercent, int rightPercent,int  motor_percent,int expected_counts){
+     move_forward(motor_percent,expected_counts);
+     //turn 45 degrees
+  leftPercent=25;
+ rightPercent=0;
+  expected_counts=117;
+  turn(leftPercent, rightPercent,expected_counts);
+     //move 7 inches
+   expected_counts=246;
+   move_forward(motor_percent,expected_counts);
+    if(cds.Value()<1){
+        LCD.WriteLine("The light is red");
+        leftPercent=0;
+        rightPercent=25;
+      expected_counts= 234.74;
+      turn(leftPercent,rightPercent,expected_counts);
+      expected_counts=1000;
+      motor_percent=-25;
+      move_forward(motor_percent,expected_counts);
+     // Sleep(5.0);
+      motor_percent=25;
+      expected_counts=50;
+      move_forward(motor_percent,expected_counts);
+      leftPercent=25;
+      rightPercent=0;
+      expected_counts=117;
+      turn(leftPercent,rightPercent,expected_counts);
+      expected_counts=125;
+      move_forward(motor_percent,expected_counts);
+      leftPercent=0;
+      rightPercent=25;
+      expected_counts=112;
+      turn(leftPercent,rightPercent,expected_counts);
+    }
+    else if(cds.Value()>1){
+        LCD.WriteLine("The light is blue");
+        motor_percent=25;
+        expected_counts=210;
+        move_forward(motor_percent,expected_counts);
+        leftPercent=0;
+        rightPercent=25;
+      expected_counts= 234.74;
+      turn(leftPercent,rightPercent,expected_counts);
+      expected_counts=1000;
+      motor_percent=-25;
+      move_forward(motor_percent,expected_counts);
+    }
+   // expected_counts=254;
+   // move_forward(motor_percent,expected_counts);
+    motor_percent=70;
+    expected_counts=2300;
+    move_forward(motor_percent,expected_counts);
+   // motor_percent=25;
+   // expected_counts=1000;
+  //  move_forward(motor_percent,expected_counts);
+}
+void token (int leftPercent, int rightPercent, int motor_percent, int expected_counts){
+    //move forward 1 inch
+   //ove_forward(motor_percent,expected_counts);
+    //turn 90 degrees to left
+    expected_counts=234;
+    turn(leftPercent,rightPercent,expected_counts);
+    //move five inches
+   //xpected_counts=35;
+  //move_forward(motor_percent,expected_counts);
+    //turn 90 degrees to right
+    leftPercent=25;
+    rightPercent=0;
+    expected_counts=117;
+    turn(leftPercent, rightPercent,expected_counts);
+    //move forward 20 inches up the ramp
+    expected_counts=1000;
+    motor_percent=60;
+    move_forward(motor_percent,expected_counts);
+    //turn 90 degrees to the right
+    leftPercent=25;
+    rightPercent=0;
+    expected_counts=468;
+    turn(leftPercent,rightPercent,expected_counts);
+
+
+    expected_counts=72;
+    motor_percent=25;
+    move_forward(motor_percent,expected_counts);
+
+       robot_arm.SetDegree(0);
+
+//move_forward(motor_percent, expected_counts);
+    //move forward 2 inches
+   //xpected_counts=70.33;
+   //ove_forward(motor_percent,expected_counts);
+    //turn right 90 degrees
+   //xpected_counts=117;
+  //turn(leftPercent,rightPercent,expected_counts);
+}
+
+int main(void)
+{
+
+    int motor_percent = 25; //Input power level here
+    int expected_counts =72 ; //Input theoretical counts here
+    int leftPercent=0;
+    int rightPercent=25;
+    robot_arm.SetMax(1908);
+    robot_arm.SetMin(500);
+    float x, y; //for touch screen
+    robot_arm.SetDegree(0); //opens claw
+    Sleep(3.0);
+    robot_arm.SetDegree(165);//closes claw
+    //Initialize the screen
+    LCD.Clear(BLACK);
+    LCD.SetFontColor(WHITE);
+    LCD.WriteLine("The CDS Value is:");
+    LCD.Write(cds.Value());
+    LCD.WriteLine("Shaft Encoder Exploration Test");
+  //  LCD.WriteLine("Touch the screen");
+   // while(!LCD.Touch(&x,&y)); //Wait for screen to be pressed
+ //   while(LCD.Touch(&x,&y));
+    while(true){//Wait for screen to be unpressed
+     if(cds.Value()<1){
+        //move forward 1 inches
+        token(leftPercent, rightPercent, motor_percent, expected_counts);
+
+
+
+}
+    }
+}
+
+
